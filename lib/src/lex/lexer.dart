@@ -2,6 +2,7 @@ import 'package:lexical_analyzer2/lexical_analyzer.dart';
 
 import '../constraints/action_type.dart';
 import '../constraints/geometry_attribute.dart';
+import '../constraints/separator_type.dart';
 import 'math_tokens.dart';
 
 String _matchWordBases(Iterable<String> bases, [String endingPattern = '[а-яії]*']) =>
@@ -37,19 +38,6 @@ final mathLexer = ConfigurableLexer(
       _matchWordBases(ActionType.values.map((e) => e.wordBase)),
     ),
     const ParseRule(TokenType.Punctuation, 'r[,;.]'),
+    ParseRule(TokenType.KeywordReserved, SeparatorType.condition.pattern),
   ],
 );
-
-void main() {
-  const source = '''
-  позначте точку A(1,1)
-  ''';
-
-  print(
-    LexerWrapper.forLexer(
-      source: source,
-      lexer: mathLexer,
-      tokenFilter: (t) => t != TokenType.Text && t != TokenType.Error,
-    ).analyze(),
-  );
-}

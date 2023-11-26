@@ -231,8 +231,10 @@ class DeclarationSeparator implements MathToken {
 
   const DeclarationSeparator.declarations({this.tokenText}) : type = SeparatorType.comma;
 
+  const DeclarationSeparator.conditions({this.tokenText}) : type = SeparatorType.condition;
+
   static DeclarationSeparator? tryParse(LexerToken token) {
-    if (token.type != TokenType.Punctuation) {
+    if (token.type != TokenType.Punctuation && token.type != TokenType.KeywordReserved) {
       return null;
     }
 

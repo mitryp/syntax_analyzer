@@ -6,6 +6,7 @@ import '../domain/errors/syntax_error.dart';
 import '../lex/lexical_analyzer.dart';
 import '../lex/math_tokens.dart';
 import '../utils/iterable_head_tail.dart';
+import '../utils/iterable_split.dart';
 
 typedef ParseResult<R> = (R res, Iterable<MathToken> other);
 typedef NodeParseResult<N extends SyntaxNode> = ParseResult<N>;
@@ -62,76 +63,48 @@ sealed class SyntaxNode {
 }
 
 class _RootNode implements SyntaxNode {
-  final List<_ActionDeclarationNode> actionDeclarations;
+  final List<_ActionNode> actions;
   final List<_ConditionNode> conditions;
 
-  _RootNode({required this.actionDeclarations, required this.conditions});
+  _RootNode({required this.actions, required this.conditions});
 
   static NodeParseResult<_RootNode>? tryParse(Iterable<MathToken> tokens) {
     if (tokens.isEmpty) {
       return null;
     }
 
-    final (declarations, restTokens) =
-        _fillListWhileParses(tokens, _ActionDeclarationNode.tryParse);
+    final separated = tokens.split(const DeclarationSeparator.conditions());
+    if (separated.length > 2) {
+      throw SyntaxError('Підтримується не більше однієї умови');
+    }
+    // todo parse declarations and conditional separately
+    final actionsTokens = separated.first;
+    final conditionsTokens = separated.length == 2 ? separated.elementAt(1) : <MathToken>[];
 
-    if (declarations.isEmpty) {
+    final (actions, restTokens) = _fillListWhileParses(actionsTokens, _ActionNode.tryParse);
+
+    if (actions.isEmpty) {
       throw SyntaxError('Жодної дії не задано');
     }
 
-    final (conditions, leftoverTokens) = _fillListWhileParses(restTokens, _ConditionNode.tryParse);
+    if (restTokens.isNotEmpty) {
+      throw SyntaxError('Зайві токени після списку визначень: $restTokens');
+    }
 
-    return (_RootNode(actionDeclarations: declarations, conditions: conditions), leftoverTokens);
+    final (conditions, leftoverTokens) =
+        _fillListWhileParses(conditionsTokens, _ConditionNode.tryParse);
+
+    if (leftoverTokens.isNotEmpty) {
+      throw SyntaxError('Зайві токени після умови: $leftoverTokens');
+    }
+
+    return (_RootNode(actions: actions, conditions: conditions), []);
   }
 
   @override
   String toString() => '''Root(
-      actionDeclarations: $actionDeclarations
+      actions: $actions
       conditions: $conditions
-    )''';
-}
-
-class _ActionDeclarationNode implements SyntaxNode {
-  final _ActionNode action;
-  final List<_DeclarationNode> declarations;
-
-  const _ActionDeclarationNode({required this.action, required this.declarations});
-
-  static NodeParseResult<_ActionDeclarationNode>? tryParse(Iterable<MathToken> tokens) {
-    if (tokens.isEmpty) {
-      return null;
-    }
-
-    final actionParseRes = _ActionNode.tryParse(tokens);
-
-    if (actionParseRes == null) {
-      return null;
-    }
-
-    final (action, rest1) = actionParseRes;
-    final (declarations, rest2) = _fillListWhileParses(rest1, (tokens) {
-      return _DeclarationNode.tryParse(
-        tokens.skipWhile((token) {
-          if (token case DeclarationSeparator(type: SeparatorType.dot)) {
-            return true;
-          }
-
-          return false;
-        }),
-      );
-    });
-
-    // if (declarations.isEmpty) {
-    //   return null;
-    // }
-
-    return (_ActionDeclarationNode(action: action, declarations: declarations), rest2);
-  }
-
-  @override
-  String toString() => '''ActionDeclaration(
-      action: $action
-      declarations: $declarations
     )''';
 }
 
@@ -249,7 +222,7 @@ class _DeclarationNode implements SyntaxNode {
   }
 
   @override
-  String toString() => '''Declarations(
+  String toString() => '''Declaration(
       $declarations
     )''';
 }
@@ -294,13 +267,22 @@ class _ObjectNode implements SyntaxNode {
       return null;
     }
 
-    final (typeDecl, tail) = tokens.headTail();
+    var (first, tail) = tokens.headTail();
+    final FigureType type;
 
-    if (typeDecl is! FigureTypeDeclaration) {
-      return null;
+    switch (first) {
+      case FigureDeclaration(type: final figureType) ||
+            FigureTypeDeclaration(type: final figureType):
+        type = figureType;
+      default:
+        return null;
     }
 
-    final parser = typeDecl.type == FigureType.point ? _PointNode.tryParse : _LineNode.tryParse;
+    if (first is FigureDeclaration) {
+      tail = [first, ...tail];
+    }
+
+    final parser = type == FigureType.point ? _PointNode.tryParse : _LineNode.tryParse;
 
     final (declarations, restTokens) = _fillListWhileParses(tail, (tokens) {
       return parser(
@@ -319,7 +301,7 @@ class _ObjectNode implements SyntaxNode {
     }
 
     return (
-      _ObjectNode(declarations: declarations, figureType: typeDecl.type),
+      _ObjectNode(declarations: declarations, figureType: type),
       restTokens,
     );
   }
@@ -411,8 +393,9 @@ class _LineNode implements _ObjectNodeDeclaration {
 }
 
 void main() {
-  const str = 'провести пряму AB, паралельну прямій CD.';
-
+  const str =
+      'провести пряму AB, де A(1,2), B(2, 4)'; //. провести пряму CD, паралельну прямій AB';
+      // 'позначте точку A(1,2)';
   final tokens = parse(str);
   final obj = SyntaxNode.buildSyntaxAnalysisTree(tokens);
   print(obj);

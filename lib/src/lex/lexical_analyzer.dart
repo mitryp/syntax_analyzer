@@ -17,8 +17,6 @@ Iterable<MathToken> parse(String input) sync* {
 
   final tokens = wrapper.analyze().tokens;
 
-  print(tokens);
-
   if (tokens.isEmpty) {
     return;
   }
@@ -39,7 +37,6 @@ Iterable<MathToken> parse(String input) sync* {
                 FigureDeclaration(type: final declaredType),
               )
           when declaredType != declarationType:
-        print((prev, cur));
         throw DeclarationTypeError(declarationType: declarationType, declaredType: declaredType);
       case (
             ActionDeclaration(actionType: final actionType),

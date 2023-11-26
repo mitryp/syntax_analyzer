@@ -1,6 +1,7 @@
 enum SeparatorType {
   dot(r'[.;]'),
-  comma(r',');
+  comma(r','),
+  condition(r'де|через');
 
   final String pattern;
 
