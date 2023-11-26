@@ -315,11 +315,6 @@ class _ObjectNode implements SyntaxNode {
 
 sealed class _ObjectNodeDeclaration implements SyntaxNode {
   String get name;
-
-  static FigureType typeOf(_ObjectNodeDeclaration decl) => switch (decl) {
-        _PointNode() => FigureType.point,
-        _LineNode() => FigureType.line,
-      };
 }
 
 class _PointNode implements _ObjectNodeDeclaration {
