@@ -1,1 +1,1 @@
-export 'src/lexical_analyzer.dart'; // todo remove
+export 'src/lex/lexer.dart'; // todo remove

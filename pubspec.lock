@@ -142,7 +142,7 @@ packages:
     description:
       path: "."
       ref: HEAD
-      resolved-ref: "679eec6059ba9b92fb0e5fcf39efa26c9bcb971e"
+      resolved-ref: d486a78a7572a50cfeef5f04f5ef5837b63d0d27
       url: "https://github.com/mitryp/dart_lex"
     source: git
     version: "0.0.1"
@@ -151,7 +151,7 @@ packages:
     description:
       path: "."
       ref: HEAD
-      resolved-ref: aebf6f8ee0461314de728b7b031007bd1a65732b
+      resolved-ref: "2cc47c88f03e08474f46cda345d1bcb6ca12b0af"
       url: "https://github.com/mitryp/lexical_analyzer"
     source: git
     version: "1.0.0"
