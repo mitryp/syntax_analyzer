@@ -59,16 +59,16 @@ typedef NodeParseResult<N extends SyntaxNode> = ParseResult<N>;
 
 sealed class SyntaxNode {
   factory SyntaxNode.buildSyntaxAnalysisTree(Iterable<MathToken> tokens) =>
-      _RootNode.tryParse(tokens)?.$1 ?? (throw SyntaxError('Something went wrong'));
+      RootNode.tryParse(tokens)?.$1 ?? (throw SyntaxError('Something went wrong'));
 }
 
-class _RootNode implements SyntaxNode {
-  final List<_ActionNode> actions;
-  final List<_ConditionNode> conditions;
+class RootNode implements SyntaxNode {
+  final List<ActionNode> actions;
+  final List<ConditionNode> conditions;
 
-  _RootNode({required this.actions, required this.conditions});
+  RootNode({required this.actions, required this.conditions});
 
-  static NodeParseResult<_RootNode>? tryParse(Iterable<MathToken> tokens) {
+  static NodeParseResult<RootNode>? tryParse(Iterable<MathToken> tokens) {
     if (tokens.isEmpty) {
       return null;
     }
@@ -77,11 +77,11 @@ class _RootNode implements SyntaxNode {
     if (separated.length > 2) {
       throw SyntaxError('Підтримується не більше однієї умови');
     }
-    // todo parse declarations and conditional separately
+
     final actionsTokens = separated.first;
     final conditionsTokens = separated.length == 2 ? separated.elementAt(1) : <MathToken>[];
 
-    final (actions, restTokens) = _fillListWhileParses(actionsTokens, _ActionNode.tryParse);
+    final (actions, restTokens) = _fillListWhileParses(actionsTokens, ActionNode.tryParse);
 
     if (actions.isEmpty) {
       throw SyntaxError('Жодної дії не задано');
@@ -92,13 +92,13 @@ class _RootNode implements SyntaxNode {
     }
 
     final (conditions, leftoverTokens) =
-        _fillListWhileParses(conditionsTokens, _ConditionNode.tryParse);
+        _fillListWhileParses(conditionsTokens, ConditionNode.tryParse);
 
     if (leftoverTokens.isNotEmpty) {
       throw SyntaxError('Зайві токени після умови: $leftoverTokens');
     }
 
-    return (_RootNode(actions: actions, conditions: conditions), []);
+    return (RootNode(actions: actions, conditions: conditions), []);
   }
 
   @override
@@ -108,18 +108,18 @@ class _RootNode implements SyntaxNode {
     )''';
 }
 
-class _ConditionNode implements SyntaxNode {
-  final _ObjectNode object;
-  final List<_PropertyNode> properties;
+class ConditionNode implements SyntaxNode {
+  final ObjectNode object;
+  final List<PropertyNode> properties;
 
-  const _ConditionNode({required this.object, required this.properties});
+  const ConditionNode({required this.object, required this.properties});
 
-  static NodeParseResult<_ConditionNode>? tryParse(Iterable<MathToken> tokens) {
+  static NodeParseResult<ConditionNode>? tryParse(Iterable<MathToken> tokens) {
     if (tokens.isEmpty) {
       return null;
     }
 
-    final objParseRes = _ObjectNode.tryParse(tokens);
+    final objParseRes = ObjectNode.tryParse(tokens);
 
     if (objParseRes == null) {
       return null;
@@ -127,7 +127,7 @@ class _ConditionNode implements SyntaxNode {
 
     final (obj, rest1) = objParseRes;
     final (props, rest2) = _fillListWhileParses(rest1, (tokens) {
-      return _PropertyNode.tryParse(
+      return PropertyNode.tryParse(
         tokens.skipWhile((token) {
           if (token case DeclarationSeparator(type: SeparatorType.comma)) {
             return true;
@@ -138,7 +138,7 @@ class _ConditionNode implements SyntaxNode {
       );
     });
 
-    return (_ConditionNode(object: obj, properties: props), rest2);
+    return (ConditionNode(object: obj, properties: props), rest2);
   }
 
   @override
@@ -148,13 +148,13 @@ class _ConditionNode implements SyntaxNode {
     )''';
 }
 
-class _ActionNode implements SyntaxNode {
+class ActionNode implements SyntaxNode {
   final ActionType operation;
-  final List<_DeclarationNode> declarations;
+  final List<DeclarationNode> declarations;
 
-  const _ActionNode({required this.operation, required this.declarations});
+  const ActionNode({required this.operation, required this.declarations});
 
-  static NodeParseResult<_ActionNode>? tryParse(Iterable<MathToken> tokens) {
+  static NodeParseResult<ActionNode>? tryParse(Iterable<MathToken> tokens) {
     if (tokens.isEmpty) {
       return null;
     }
@@ -167,13 +167,13 @@ class _ActionNode implements SyntaxNode {
 
     final operation = actionDecl.actionType;
 
-    final (declarations, restTokens) = _fillListWhileParses(tail, _DeclarationNode.tryParse);
+    final (declarations, restTokens) = _fillListWhileParses(tail, DeclarationNode.tryParse);
 
     if (declarations.isEmpty) {
       return null;
     }
 
-    return (_ActionNode(operation: operation, declarations: declarations), restTokens);
+    return (ActionNode(operation: operation, declarations: declarations), restTokens);
   }
 
   @override
@@ -183,12 +183,12 @@ class _ActionNode implements SyntaxNode {
     )''';
 }
 
-class _DeclarationNode implements SyntaxNode {
-  final List<(_ObjectNode, _PropertyNode?)> declarations;
+class DeclarationNode implements SyntaxNode {
+  final List<(ObjectNode, PropertyNode?)> declarations;
 
-  const _DeclarationNode({required this.declarations});
+  const DeclarationNode({required this.declarations});
 
-  static NodeParseResult<_DeclarationNode>? tryParse(Iterable<MathToken> tokens) {
+  static NodeParseResult<DeclarationNode>? tryParse(Iterable<MathToken> tokens) {
     if (tokens.isEmpty) {
       return null;
     }
@@ -202,14 +202,14 @@ class _DeclarationNode implements SyntaxNode {
         return false;
       });
 
-      final objParseRes = _ObjectNode.tryParse(stripped);
+      final objParseRes = ObjectNode.tryParse(stripped);
 
       if (objParseRes == null) {
         return null;
       }
 
       final (obj, rest1) = objParseRes;
-      final (prop, rest2) = _PropertyNode.tryParse(rest1) ?? (null, null);
+      final (prop, rest2) = PropertyNode.tryParse(rest1) ?? (null, null);
 
       return ((obj, prop), rest2 ?? rest1);
     });
@@ -218,7 +218,7 @@ class _DeclarationNode implements SyntaxNode {
       return null;
     }
 
-    return (_DeclarationNode(declarations: declarations), restTokens);
+    return (DeclarationNode(declarations: declarations), restTokens);
   }
 
   @override
@@ -227,19 +227,19 @@ class _DeclarationNode implements SyntaxNode {
     )''';
 }
 
-class _PropertyNode implements SyntaxNode {
+class PropertyNode implements SyntaxNode {
   final GeometryAttribute attribute;
-  final _ObjectNode target;
+  final ObjectNode target;
 
-  const _PropertyNode({required this.attribute, required this.target});
+  const PropertyNode({required this.attribute, required this.target});
 
-  static NodeParseResult<_PropertyNode>? tryParse(Iterable<MathToken> tokens) {
+  static NodeParseResult<PropertyNode>? tryParse(Iterable<MathToken> tokens) {
     if (tokens.length < 2) {
       return null;
     }
 
     final (attribute, tail) = tokens.headTail();
-    final lineParseRes = _ObjectNode.tryParse(tail);
+    final lineParseRes = ObjectNode.tryParse(tail);
 
     if (attribute is! FigureAttribute ||
         lineParseRes == null ||
@@ -249,20 +249,20 @@ class _PropertyNode implements SyntaxNode {
 
     final (line, restTokens) = lineParseRes;
 
-    return (_PropertyNode(attribute: attribute.attribute, target: line), restTokens);
+    return (PropertyNode(attribute: attribute.attribute, target: line), restTokens);
   }
 
   @override
   String toString() => 'Property($attribute -> $target)';
 }
 
-class _ObjectNode implements SyntaxNode {
+class ObjectNode implements SyntaxNode {
   final FigureType figureType;
-  final List<_ObjectNodeDeclaration> declarations;
+  final List<ObjectNodeDeclaration> declarations;
 
-  const _ObjectNode({required this.figureType, required this.declarations});
+  const ObjectNode({required this.figureType, required this.declarations});
 
-  static NodeParseResult<_ObjectNode>? tryParse(Iterable<MathToken> tokens) {
+  static NodeParseResult<ObjectNode>? tryParse(Iterable<MathToken> tokens) {
     if (tokens.isEmpty) {
       return null;
     }
@@ -282,7 +282,7 @@ class _ObjectNode implements SyntaxNode {
       tail = [first, ...tail];
     }
 
-    final parser = type == FigureType.point ? _PointNode.tryParse : _LineNode.tryParse;
+    final parser = type == FigureType.point ? PointNode.tryParse : LineNode.tryParse;
 
     final (declarations, restTokens) = _fillListWhileParses(tail, (tokens) {
       return parser(
@@ -301,7 +301,7 @@ class _ObjectNode implements SyntaxNode {
     }
 
     return (
-      _ObjectNode(declarations: declarations, figureType: type),
+      ObjectNode(declarations: declarations, figureType: type),
       restTokens,
     );
   }
@@ -313,18 +313,18 @@ class _ObjectNode implements SyntaxNode {
     )''';
 }
 
-sealed class _ObjectNodeDeclaration implements SyntaxNode {
+sealed class ObjectNodeDeclaration implements SyntaxNode {
   String get name;
 }
 
-class _PointNode implements _ObjectNodeDeclaration {
+class PointNode implements ObjectNodeDeclaration {
   @override
   final String name;
   final Coordinates? coordinates;
 
-  const _PointNode({required this.name, this.coordinates});
+  const PointNode({required this.name, this.coordinates});
 
-  static NodeParseResult<_PointNode>? tryParse(Iterable<MathToken> tokens) {
+  static NodeParseResult<PointNode>? tryParse(Iterable<MathToken> tokens) {
     if (tokens.isEmpty) {
       return null;
     }
@@ -339,7 +339,7 @@ class _PointNode implements _ObjectNodeDeclaration {
     final coords = next is Coordinates ? next : null;
 
     return (
-      _PointNode(name: head.name, coordinates: coords),
+      PointNode(name: head.name, coordinates: coords),
       tail.skip(coords != null ? 1 : 0).skipWhile((token) {
         if (token case DeclarationSeparator(type: SeparatorType.comma)) {
           return true;
@@ -354,13 +354,13 @@ class _PointNode implements _ObjectNodeDeclaration {
   String toString() => 'Point($name, $coordinates)';
 }
 
-class _LineNode implements _ObjectNodeDeclaration {
+class LineNode implements ObjectNodeDeclaration {
   @override
   final String name;
 
-  const _LineNode({required this.name});
+  const LineNode({required this.name});
 
-  static NodeParseResult<_LineNode>? tryParse(Iterable<MathToken> tokens) {
+  static NodeParseResult<LineNode>? tryParse(Iterable<MathToken> tokens) {
     if (tokens.isEmpty) {
       return null;
     }
@@ -372,7 +372,7 @@ class _LineNode implements _ObjectNodeDeclaration {
     }
 
     return (
-      _LineNode(name: head.name),
+      LineNode(name: head.name),
       tail.skipWhile((token) {
         if (token case DeclarationSeparator(type: SeparatorType.comma)) {
           return true;
@@ -388,9 +388,8 @@ class _LineNode implements _ObjectNodeDeclaration {
 }
 
 void main() {
-  const str =
-      'провести пряму AB, де A(1,2), B(2, 4)'; //. провести пряму CD, паралельну прямій AB';
-      // 'позначте точку A(1,2)';
+  const str = 'провести пряму'; //. провести пряму CD, паралельну прямій AB';
+  // 'позначте точку A(1,2)';
   final tokens = parse(str);
   final obj = SyntaxNode.buildSyntaxAnalysisTree(tokens);
   print(obj);
