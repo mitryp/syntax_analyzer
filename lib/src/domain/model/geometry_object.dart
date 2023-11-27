@@ -109,6 +109,10 @@ class Line extends GeometryObject {
   }
 
   Line assignPoint(Point p) {
+    if (points.$1 == p || points.$2 == p) {
+      return this;
+    }
+
     final newPoints = switch (points) {
       (null, final p1) when p1 != p => (p, p1),
       (final p1, null) when p1 != p => (p1, p),
