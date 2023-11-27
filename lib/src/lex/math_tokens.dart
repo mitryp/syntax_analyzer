@@ -28,7 +28,7 @@ sealed class MathToken {
 }
 
 class Coordinates implements MathToken {
-  static const String regExpPattern = r'\(\s*(\d+)\s*,\s*(\d+)\s*\)';
+  static const String regExpPattern = r'\(\s*(-?\d+)\s*,\s*(-?\d+)\s*\)';
 
   @override
   final String? tokenText;
