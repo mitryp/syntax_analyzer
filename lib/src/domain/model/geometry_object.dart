@@ -89,7 +89,7 @@ class Line extends GeometryObject {
 
     final [p1Name, p2Name] = name.split('');
 
-    return (ids.$1 ?? p1Name, ids.$2 ?? p2Name);
+    return (p1Name, p2Name);
   }
 
   Line(this.declaration, [this.points = (null, null)]);
