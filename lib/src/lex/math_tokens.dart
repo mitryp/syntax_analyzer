@@ -1,5 +1,6 @@
 import 'package:lexical_analyzer2/lexical_analyzer.dart';
 
+import '../domain/errors/syntax_error.dart';
 import '../constants.dart';
 import '../constraints/action_type.dart';
 import '../constraints/figure_type.dart';
@@ -148,9 +149,7 @@ class PointDeclaration extends FigureDeclaration {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is PointDeclaration &&
-          runtimeType == other.runtimeType &&
-          name == other.name;
+      other is PointDeclaration && runtimeType == other.runtimeType && name == other.name;
 
   @override
   int get hashCode => name.hashCode;
@@ -177,8 +176,14 @@ class LineDeclaration extends FigureDeclaration {
 
     final str = token.text;
 
-    if (str.isEmpty || str.length > 2 || !RegExp(r'[A-Z]{2}|[a-z]').hasMatch(str)) {
+    if (str.isEmpty ||
+        str.length > 2 ||
+        !RegExp(r'[A-Z]{2}|[a-z]').hasMatch(str)) {
       return null;
+    }
+
+    if (str.split('').toSet().length != str.length) {
+      throw SyntaxError('Назви прямих мають містити дві унікальні точки');
     }
 
     return LineDeclaration(name: str, id: token.id, tokenText: str);
@@ -193,9 +198,7 @@ class LineDeclaration extends FigureDeclaration {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is LineDeclaration &&
-          runtimeType == other.runtimeType &&
-          name == other.name;
+      other is LineDeclaration && runtimeType == other.runtimeType && name == other.name;
 
   @override
   int get hashCode => name.hashCode;
