@@ -3,7 +3,6 @@ import '../constraints/figure_type.dart';
 import '../constraints/geometry_attribute.dart';
 import '../constraints/separator_type.dart';
 import '../domain/errors/syntax_error.dart';
-import '../lex/lexical_analyzer.dart';
 import '../lex/math_tokens.dart';
 import '../utils/iterable_head_tail.dart';
 import '../utils/iterable_split.dart';
@@ -109,17 +108,17 @@ class RootNode implements SyntaxNode {
 }
 
 class ConditionNode implements SyntaxNode {
-  final ObjectNode object;
+  final ObjectNodeDeclaration objectDeclaration;
   final List<PropertyNode> properties;
 
-  const ConditionNode({required this.object, required this.properties});
+  const ConditionNode({required this.objectDeclaration, required this.properties});
 
   static NodeParseResult<ConditionNode>? tryParse(Iterable<MathToken> tokens) {
     if (tokens.isEmpty) {
       return null;
     }
 
-    final objParseRes = ObjectNode.tryParse(tokens);
+    final objParseRes = LineNode.tryParse(tokens) ?? PointNode.tryParse(tokens);
 
     if (objParseRes == null) {
       return null;
@@ -138,21 +137,21 @@ class ConditionNode implements SyntaxNode {
       );
     });
 
-    return (ConditionNode(object: obj, properties: props), rest2);
+    return (ConditionNode(objectDeclaration: obj, properties: props), rest2);
   }
 
   @override
   String toString() => '''Condition(
-      object: $object
+      object: $objectDeclaration
       properties: $properties
     )''';
 }
 
 class ActionNode implements SyntaxNode {
   final ActionType operation;
-  final List<DeclarationNode> declarations;
+  final List<DeclarationNode> declarationNodes;
 
-  const ActionNode({required this.operation, required this.declarations});
+  const ActionNode({required this.operation, required this.declarationNodes});
 
   static NodeParseResult<ActionNode>? tryParse(Iterable<MathToken> tokens) {
     if (tokens.isEmpty) {
@@ -173,13 +172,13 @@ class ActionNode implements SyntaxNode {
       return null;
     }
 
-    return (ActionNode(operation: operation, declarations: declarations), restTokens);
+    return (ActionNode(operation: operation, declarationNodes: declarations), restTokens);
   }
 
   @override
   String toString() => '''Action(
       operation: $operation
-      declarations: $declarations
+      declarations: $declarationNodes
     )''';
 }
 
@@ -229,7 +228,7 @@ class DeclarationNode implements SyntaxNode {
 
 class PropertyNode implements SyntaxNode {
   final GeometryAttribute attribute;
-  final ObjectNode target;
+  final ObjectNodeDeclaration target;
 
   const PropertyNode({required this.attribute, required this.target});
 
@@ -239,11 +238,9 @@ class PropertyNode implements SyntaxNode {
     }
 
     final (attribute, tail) = tokens.headTail();
-    final lineParseRes = ObjectNode.tryParse(tail);
+    final lineParseRes = LineNode.tryParse(tail) ?? PointNode.tryParse(tail);
 
-    if (attribute is! FigureAttribute ||
-        lineParseRes == null ||
-        lineParseRes.$1.figureType != FigureType.line) {
+    if (attribute is! FigureAttribute || lineParseRes == null || lineParseRes.$1 is! LineNode) {
       return null;
     }
 
@@ -385,12 +382,4 @@ class LineNode implements ObjectNodeDeclaration {
 
   @override
   String toString() => 'Line($name)';
-}
-
-void main() {
-  const str = 'провести пряму'; //. провести пряму CD, паралельну прямій AB';
-  // 'позначте точку A(1,2)';
-  final tokens = parse(str);
-  final obj = SyntaxNode.buildSyntaxAnalysisTree(tokens);
-  print(obj);
 }

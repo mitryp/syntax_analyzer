@@ -58,6 +58,14 @@ class Coordinates implements MathToken {
 
   @override
   String toString() => '($x, $y)';
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Coordinates && runtimeType == other.runtimeType && x == other.x && y == other.y;
+
+  @override
+  int get hashCode => x.hashCode ^ y.hashCode;
 }
 
 class FigureTypeDeclaration implements MathToken {
@@ -136,6 +144,17 @@ class PointDeclaration extends FigureDeclaration {
 
   @override
   String toString() => 'Point ${name.isEmpty ? tokenText : name}';
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PointDeclaration &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          name == other.name;
+
+  @override
+  int get hashCode => id.hashCode ^ name.hashCode;
 }
 
 class LineDeclaration extends FigureDeclaration {
@@ -170,7 +189,18 @@ class LineDeclaration extends FigureDeclaration {
   String represent() => name;
 
   @override
-  String toString() => 'Line ${name.isEmpty ? tokenText : name}'; //(points: $points)';
+  String toString() => 'Line ${name.isEmpty ? tokenText : name}';
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LineDeclaration &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          name == other.name;
+
+  @override
+  int get hashCode => id.hashCode ^ name.hashCode;
 }
 
 class FigureAttribute implements MathToken {
