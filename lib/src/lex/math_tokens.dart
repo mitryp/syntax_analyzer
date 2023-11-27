@@ -150,11 +150,10 @@ class PointDeclaration extends FigureDeclaration {
       identical(this, other) ||
       other is PointDeclaration &&
           runtimeType == other.runtimeType &&
-          id == other.id &&
           name == other.name;
 
   @override
-  int get hashCode => id.hashCode ^ name.hashCode;
+  int get hashCode => name.hashCode;
 }
 
 class LineDeclaration extends FigureDeclaration {
@@ -196,11 +195,10 @@ class LineDeclaration extends FigureDeclaration {
       identical(this, other) ||
       other is LineDeclaration &&
           runtimeType == other.runtimeType &&
-          id == other.id &&
           name == other.name;
 
   @override
-  int get hashCode => id.hashCode ^ name.hashCode;
+  int get hashCode => name.hashCode;
 }
 
 class FigureAttribute implements MathToken {

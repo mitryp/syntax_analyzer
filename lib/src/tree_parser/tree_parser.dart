@@ -36,15 +36,13 @@ class TreeParser {
 
   void _applyConditions(Iterable<Condition> conditions) {
     for (final (object, properties) in conditions) {
-      if (object is! Line) {
-        continue;
+      if (object is Line) {
+        for (final (attribute, target) in properties) {
+          object.addAttribute(attribute, forObjects: [target]);
+        }
       }
 
-      for (final (attribute, target) in properties) {
-        object.addAttribute(attribute, forObjects: [target]);
-      }
-
-      _updateObject(object);
+      _updateObject(object, updatesOnly: true);
     }
   }
 
@@ -54,11 +52,15 @@ class TreeParser {
     objects.forEach(_updateObject);
   }
 
-  void _updateObject(GeometryObject object) {
+  void _updateObject(GeometryObject object, {bool updatesOnly = false}) {
     final name = object.declaration.name;
     final existingObject = name.isNotEmpty ? namedObjects[name] : null;
 
     if (existingObject == null) {
+      if (updatesOnly) {
+        return;
+      }
+
       namedObjects[name] = object;
       declaredObjects.add(object);
 
@@ -91,6 +93,7 @@ class TreeParser {
     }
 
     final applied = existingObject.apply(object);
+    declaredObjects.remove(existingObject);
     declaredObjects.add(applied);
     if (name.isNotEmpty) {
       namedObjects[name] = applied;
@@ -102,7 +105,8 @@ class TreeParser {
   bool _objectIsRegistered(GeometryObject object) {
     final name = object.declaration.name;
 
-    return (name.isNotEmpty && namedObjects[name] != null) || declaredObjects.contains(object);
+    return (name.isNotEmpty && namedObjects[name] != null) ||
+        declaredObjects.where((e) => e.declaration == object.declaration).isNotEmpty;
   }
 }
 

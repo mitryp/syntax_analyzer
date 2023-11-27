@@ -110,8 +110,8 @@ class Line extends GeometryObject {
 
   Line assignPoint(Point p) {
     final newPoints = switch (points) {
-      (null, final p1) => (p, p1),
-      (final p1, null) => (p1, p),
+      (null, final p1) when p1 != p => (p, p1),
+      (final p1, null) when p1 != p => (p1, p),
       _ => points, // cannot assign a new point to a line which already has both points assigned
     };
 
